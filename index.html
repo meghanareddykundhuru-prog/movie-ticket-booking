@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineMax - Movie Ticket Booking</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0b1020;
+            color: white;
+        }
+
+        header {
+            background: linear-gradient(135deg, #6d28d9, #db2777);
+            padding: 24px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.15);
+            padding: 9px 14px;
+            border-radius: 20px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 28px auto;
+        }
+
+        .card {
+            background: #151d35;
+            border: 1px solid #293552;
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(250px, 1fr)
+            );
+            gap: 15px;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #384765;
+            background: #0f172a;
+            color: white;
+        }
+
+        button {
+            background: #7c3aed;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .show {
+            padding: 15px;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            background: #10182d;
+        }
+
+        .show.selected {
+            border: 2px solid #a78bfa;
+            background: #21164a;
+        }
+
+        .show h3 {
+            margin: 0 0 8px;
+        }
+
+        .time {
+            color: #c4b5fd;
+            font-weight: bold;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 5px 9px;
+            background: #263453;
+            border-radius: 20px;
+            font-size: 12px;
+            margin: 3px;
+        }
+
+        .seats {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 7px;
+            max-width: 600px;
+            margin: 15px auto;
+        }
+
+        .seat {
+            padding: 9px 2px;
+            font-size: 12px;
+            background: #1e293b;
+        }
+
+        .seat.selected {
+            background: #22c55e;
+        }
+
+        .seat.booked {
+            background: #ef4444;
+            cursor: not-allowed;
+        }
+
+        .summary {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 12px;
+            line-height: 1.8;
+        }
+
+        .success {
+            display: none;
+            background: #064e3b;
+            border: 1px solid #10b981;
+            padding: 18px;
+            border-radius: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        .empty {
+            color: #94a3b8;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .seats {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            header {
+                display: block;
+            }
+
+            .badge {
+                display: inline-block;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🎬 CineMax</h1>
+    <div class="badge">Smart Movie Ticket Booking</div>
+</header>
+
+<div class="container">
+
+    <!-- ALGORITHM SECTION -->
+    <div class="card">
+        <h2>🎯 Maximum Non-Overlapping Shows</h2>
+
+        <p>
+            The application uses the
+            <b>Greedy Activity Selection Algorithm</b>
+            to select the maximum number of complete movie shows
+            without overlapping.
+        </p>
+
+        <button onclick="findOptimal()">
+            Find Maximum Shows
+        </button>
+
+        <div id="optimal" style="margin-top:15px;"></div>
+    </div>
+
+
+    <!-- AVAILABLE MOVIES -->
+    <div class="card">
+
+        <h2>🎞️ Available Shows</h2>
+
+        <div class="grid" id="shows"></div>
+
+    </div>
+
+
+    <!-- BOOKING -->
+    <div class="card">
+
+        <h2>🎟️ Book Tickets</h2>
+
+        <div class="grid">
+
+            <div>
+                <label>Selected Show</label>
+
+                <select id="showSelect"
+                        onchange="updatePrice()">
+                </select>
+            </div>
+
+            <div>
+                <label>Number of Tickets</label>
+
+                <select id="ticketCount"
+                        onchange="updatePrice()">
+
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                    <option>6</option>
+
+                </select>
+            </div>
+
+        </div>
+
+
+        <h3>Select Seats</h3>
+
+        <div class="seats" id="seats"></div>
+
+        <div class="summary" id="summary">
+            Select a show and seats to continue.
+        </div>
+
+        <button
+            onclick="book()"
+            style="margin-top:15px;">
+
+            Confirm Booking
+
+        </button>
+
+    </div>
+
+
+    <!-- CONFIRMATION -->
+    <div class="card">
+
+        <h2>📋 Booking Confirmation</h2>
+
+        <div id="confirmation"
+             class="success">
+        </div>
+
+        <div id="history"></div>
+
+    </div>
+
+
+    <!-- ADD SHOW -->
+    <div class="card">
+
+        <h2>➕ Add Your Own Show</h2>
+
+        <div class="grid">
+
+            <input
+                id="movie"
+                placeholder="Movie name">
+
+            <input
+                id="start"
+                type="time">
+
+            <input
+                id="end"
+                type="time">
+
+            <input
+                id="price"
+                type="number"
+                placeholder="Ticket price"
+                min="1">
+
+        </div>
+
+        <button
+            onclick="addShow()"
+            style="margin-top:12px;">
+
+            Add Show
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================
+   MOVIE SHOW DATA
+========================================= */
+
+let shows = [
+
+    {
+        id: 1,
+        movie: "Avengers: Endgame",
+        start: "09:00",
+        end: "11:30",
+        price: 180
+    },
+
+    {
+        id: 2,
+        movie: "Interstellar",
+        start: "10:00",
+        end: "12:45",
+        price: 200
+    },
+
+    {
+        id: 3,
+        movie: "Inception",
+        start: "12:00",
+        end: "14:20",
+        price: 180
+    },
+
+    {
+        id: 4,
+        movie: "Spider-Man",
+        start: "14:30",
+        end: "16:45",
+        price: 160
+    },
+
+    {
+        id: 5,
+        movie: "Dune: Part Two",
+        start: "16:00",
+        end: "18:50",
+        price: 220
+    },
+
+    {
+        id: 6,
+        movie: "The Batman",
+        start: "17:00",
+        end: "19:30",
+        price: 190
+    },
+
+    {
+        id: 7,
+        movie: "Avatar 2",
+        start: "19:00",
+        end: "22:00",
+        price: 220
+    },
+
+    {
+        id: 8,
+        movie: "Joker",
+        start: "19:45",
+        end: "22:00",
+        price: 180
+    }
+
+];
+
+
+/* =========================================
+   BOOKING VARIABLES
+========================================= */
+
+let selectedSeats = [];
+
+let bookedSeats = {};
+
+let bookings = [];
+
+
+/* =========================================
+   HELPER FUNCTION
+========================================= */
+
+function $(id) {
+
+    return document.getElementById(id);
+
+}
+
+
+/* Convert HH:MM to minutes */
+
+function mins(time) {
+
+    let [hours, minutes] =
+        time.split(":").map(Number);
+
+    return hours * 60 + minutes;
+
+}
+
+
+/* Convert 24 hour time to AM/PM */
+
+function fmt(time) {
+
+    let [hours, minutes] =
+        time.split(":").map(Number);
+
+    let period = hours >= 12 ? "PM" : "AM";
+
+    hours = hours % 12 || 12;
+
+    return `${hours}:${String(minutes).padStart(2, "0")} ${period}`;
+
+}
+
+
+/* =========================================
+   DISPLAY MOVIES
+========================================= */
+
+function renderShows() {
+
+    $("shows").innerHTML =
+        shows.map(show => `
+
+        <div class="show"
+             id="show-${show.id}">
+
+            <h3>
+                ${show.movie}
+            </h3>
+
+            <div class="time">
+
+                ${fmt(show.start)}
+                -
+                ${fmt(show.end)}
+
+            </div>
+
+            <span class="pill">
+                ₹${show.price}
+            </span>
+
+            <span class="pill">
+
+                ${mins(show.end) -
+                  mins(show.start)}
+                min
+
+            </span>
+
+            <button
+                style="margin-top:10px"
+                onclick="selectShow(${show.id})">
+
+                Select Show
+
+            </button>
+
+        </div>
+
+    `).join("");
+
+
+    $("showSelect").innerHTML =
+        shows.map(show => `
+
+        <option value="${show.id}">
+
+            ${show.movie}
+            —
+            ${fmt(show.start)}
+            to
+            ${fmt(show.end)}
+            —
+            ₹${show.price}
+
+        </option>
+
+    `).join("");
+
+
+    renderSeats();
+
+    updatePrice();
+
+}
+
+
+/* =========================================
+   SELECT MOVIE
+========================================= */
+
+function selectShow(id) {
+
+    $("showSelect").value = id;
+
+    selectedSeats = [];
+
+    renderShowsSelection();
+
+    renderSeats();
+
+    updatePrice();
+
+}
+
+
+/* Highlight selected movie */
+
+function renderShowsSelection() {
+
+    document
+        .querySelectorAll(".show")
+        .forEach(element => {
+
+            element.classList.remove("selected");
+
+        });
+
+
+    let element =
+        $("show-" + $("showSelect").value);
+
+    if (element) {
+
+        element.classList.add("selected");
+
+    }
+
+}
+
+
+/* =========================================
+   SEAT DISPLAY
+========================================= */
+
+function renderSeats() {
+
+    let id =
+        $("showSelect").value;
+
+
+    $("seats").innerHTML =
+
+        Array.from(
+            { length: 40 },
+            (_, index) => {
+
+                let seatNumber =
+                    index + 1;
+
+                let isBooked =
+                    (bookedSeats[id] || [])
+                    .includes(seatNumber);
+
+                let isSelected =
+                    selectedSeats
+                    .includes(seatNumber);
+
+
+                return `
+
+                    <button
+                        class="seat
+                        ${isBooked
+                            ? "booked"
+                            : isSelected
+                                ? "selected"
+                                : ""}"
+
+                        ${isBooked
+                            ? "disabled"
+                            : ""}
+
+                        onclick="
+                            toggleSeat(
+                                ${seatNumber}
+                            )
+                        ">
+
+                        S${seatNumber}
+
+                    </button>
+
+                `;
+
+            }
+
+        ).join("");
+
+}
+
+
+/* =========================================
+   SELECT / DESELECT SEAT
+========================================= */
+
+function toggleSeat(number) {
+
+    let maxTickets =
+        Number($("ticketCount").value);
+
+
+    if (selectedSeats.includes(number)) {
+
+        selectedSeats =
+            selectedSeats.filter(
+                seat => seat !== number
+            );
+
+    }
+
+    else {
+
+        if (selectedSeats.length >= maxTickets) {
+
+            alert(
+                "You can select only " +
+                maxTickets +
+                " seat(s)."
+            );
+
+            return;
+
+        }
+
+        selectedSeats.push(number);
+
+    }
+
+
+    updatePrice();
+
+    renderSeats();
+
+}
+
+
+/* =========================================
+   PRICE CALCULATION
+========================================= */
+
+function updatePrice() {
+
+    let show =
+        shows.find(
+            item =>
+                item.id ==
+                $("showSelect").value
+        );
+
+
+    if (!show) {
+
+        return;
+
+    }
+
+
+    renderShowsSelection();
+
+
+    let ticketCount =
+        Number(
+            $("ticketCount").value
+        );
+
+
+    let total =
+        show.price *
+        ticketCount;
+
+
+    $("summary").innerHTML = `
+
+        <b>${show.movie}</b>
+
+        <br>
+
+        Show:
+        ${fmt(show.start)}
+        -
+        ${fmt(show.end)}
+
+        <br>
+
+        Tickets:
+        ${ticketCount}
+
+        <br>
+
+        Selected Seats:
+        ${
+            selectedSeats.length
+                ? selectedSeats.join(", ")
+                : "None"
+        }
+
+        <br>
+
+        <b>Total:
+            ₹${total}
+        </b>
+
+    `;
+
+}
+
+
+/* =========================================
+   GREEDY ACTIVITY SELECTION
+========================================= */
+
+function findOptimal() {
+
+    /*
+        Step 1:
+        Sort shows according to
+        finishing time.
+    */
+
+    let sortedShows =
+        [...shows].sort(
+            (a, b) =>
+                mins(a.end) -
+                mins(b.end)
+        );
+
+
+    let selected = [];
+
+    let lastEndTime = -1;
+
+
+    /*
+        Step 2:
+        Select a show if its
+        starting time is greater
+        than or equal to the
+        previous selected show's
+        ending time.
+    */
+
+    sortedShows.forEach(show => {
+
+        if (
+            mins(show.start)
+            >=
+            lastEndTime
+        ) {
+
+            selected.push(show);
+
+            lastEndTime =
+                mins(show.end);
+
+        }
+
+    });
+
+
+    /*
+        Display result
+    */
+
+    $("optimal").innerHTML = `
+
+        <div class="summary">
+
+            <b>
+                Maximum Shows:
+                ${selected.length}
+            </b>
+
+            <br><br>
+
+            ${selected.map(show => `
+
+                🎬 ${show.movie}
+
+                (
+                ${fmt(show.start)}
+                -
+                ${fmt(show.end)}
+                )
+
+                <br>
+
+            `).join("")}
+
+        </div>
+
+    `;
+
+
+    /*
+        Highlight selected shows
+    */
+
+    shows.forEach(show => {
+
+        let element =
+            $("show-" + show.id);
+
+        if (element) {
+
+            element.classList.toggle(
+                "selected",
+                selected.some(
+                    item =>
+                        item.id === show.id
+                )
+            );
+
+        }
+
+    });
+
+}
+
+
+/* =========================================
+   BOOK TICKET
+========================================= */
+
+function book() {
+
+    let show =
+        shows.find(
+            item =>
+                item.id ==
+                $("showSelect").value
+        );
+
+
+    let ticketCount =
+        Number(
+            $("ticketCount").value
+        );
+
+
+    /*
+        Validate seats
+    */
+
+    if (
+        selectedSeats.length !==
+        ticketCount
+    ) {
+
+        alert(
+            `Please select exactly
+            ${ticketCount} seat(s).`
+        );
+
+        return;
+
+    }
+
+
+    /*
+        Store booked seats
+    */
+
+    let showId =
+        show.id;
+
+
+    bookedSeats[showId] =
+        [
+            ...(bookedSeats[showId] || []),
+            ...selectedSeats
+        ];
+
+
+    /*
+        Generate booking ID
+    */
+
+    let bookingId =
+        "CM" +
+        Date.now()
+            .toString()
+            .slice(-8);
+
+
+    /*
+        Create booking
+    */
+
+    let booking = {
+
+        code: bookingId,
+
+        movie: show.movie,
+
+        time:
+            `${fmt(show.start)}
+             -
+             ${fmt(show.end)}`,
+
+        seats:
+            [...selectedSeats],
+
+        total:
+            show.price *
+            ticketCount
+
+    };
+
+
+    bookings.unshift(booking);
+
+
+    /*
+        Display confirmation
+    */
+
+    $("confirmation").style.display =
+        "block";
+
+
+    $("confirmation").innerHTML = `
+
+        <h3>
+            ✅ Booking Confirmed!
+        </h3>
+
+        <b>Booking ID:</b>
+        ${bookingId}
+
+        <br>
+
+        <b>Movie:</b>
+        ${show.movie}
+
+        <br>
+
+        <b>Time:</b>
+        ${booking.time}
+
+        <br>
+
+        <b>Seats:</b>
+        ${booking.seats.join(", ")}
+
+        <br>
+
+        <b>Amount:</b>
+        ₹${booking.total}
+
+    `;
+
+
+    /*
+        Reset seats
+    */
+
+    selectedSeats = [];
+
+
+    renderSeats();
+
+    updatePrice();
+
+    renderHistory();
+
+}
+
+
+/* =========================================
+   BOOKING HISTORY
+========================================= */
+
+function renderHistory() {
+
+    if (bookings.length === 0) {
+
+        $("history").innerHTML = `
+
+            <div class="empty">
+
+                No bookings yet.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    $("history").innerHTML = `
+
+        <h3>
+            Recent Bookings
+        </h3>
+
+        <table>
+
+            <tr>
+
+                <th>ID</th>
+
+                <th>Movie</th>
+
+                <th>Time</th>
+
+                <th>Seats</th>
+
+                <th>Amount</th>
+
+            </tr>
+
+            ${bookings.map(
+                booking => `
+
+                <tr>
+
+                    <td>
+                        ${booking.code}
+                    </td>
+
+                    <td>
+                        ${booking.movie}
+                    </td>
+
+                    <td>
+                        ${booking.time}
+                    </td>
+
+                    <td>
+                        ${booking.seats.join(", ")}
+                    </td>
+
+                    <td>
+                        ₹${booking.total}
+                    </td>
+
+                </tr>
+
+            `).join("")}
+
+        </table>
+
+    `;
+
+}
+
+
+/* =========================================
+   ADD NEW SHOW
+========================================= */
+
+function addShow() {
+
+    let movie =
+        $("movie").value.trim();
+
+    let start =
+        $("start").value;
+
+    let end =
+        $("end").value;
+
+    let price =
+        Number(
+            $("price").value
+        );
+
+
+    /*
+        Validate input
+    */
+
+    if (
+        !movie ||
+        !start ||
+        !end ||
+        !price
+    ) {
+
+        alert(
+            "Please fill all fields."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        mins(end)
+        <=
+        mins(start)
+    ) {
+
+        alert(
+            "End time must be after start time."
+        );
+
+        return;
+
+    }
+
+
+    /*
+        Add show
+    */
+
+    shows.push({
+
+        id:
+            Date.now(),
+
+        movie:
+            movie,
+
+        start:
+            start,
+
+        end:
+            end,
+
+        price:
+            price
+
+    });
+
+
+    /*
+        Clear inputs
+    */
+
+    $("movie").value = "";
+
+    $("start").value = "";
+
+    $("end").value = "";
+
+    $("price").value = "";
+
+
+    /*
+        Refresh application
+    */
+
+    renderShows();
+
+
+    alert(
+        "Show added successfully!"
+    );
+
+}
+
+
+/* =========================================
+   INITIALIZE APPLICATION
+========================================= */
+
+renderShows();
+
+renderHistory();
+
+</script>
+
+</body>
+</html>
